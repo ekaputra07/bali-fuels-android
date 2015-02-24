@@ -1,0 +1,20 @@
+package com.balitechy.balipetrols;
+
+import com.parse.Parse;
+
+public class Application extends android.app.Application {
+
+    public static final String PARSE_APP_ID = "<PARSE APP ID>";
+    public static final String PARSE_APP_KEY = "<PARSE APP KEY>";
+
+    public Application() {
+        Parse.enableLocalDatastore(this);
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        Parse.initialize(this, PARSE_APP_ID, PARSE_APP_KEY);
+    }
+}
