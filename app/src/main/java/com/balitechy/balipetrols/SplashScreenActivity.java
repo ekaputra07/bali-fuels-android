@@ -16,7 +16,7 @@ public class SplashScreenActivity extends Activity {
             @Override
             public void run() {
                 try{
-                    sleep(3000);
+                    sleep(2000);
                     Intent mainIntent = new Intent(SplashScreenActivity.this, MainActivity.class);
                     startActivity(mainIntent);
                     finish();

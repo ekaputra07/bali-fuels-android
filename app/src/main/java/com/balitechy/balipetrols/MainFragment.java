@@ -1,5 +1,6 @@
 package com.balitechy.balipetrols;
 
+import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Color;
 import android.location.Location;
@@ -7,11 +8,11 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -36,6 +37,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
 
     private MapView mapView;
     private SeekBar radiusSeeker;
+    private TextView radiusText;
     private List<Marker> markers = new ArrayList<Marker>();
 
     private int locationChangedCounter = 0;
@@ -43,8 +45,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     private LocationManager locationManager;
     private GoogleMap map;
     private Circle radiusCircle;
-    private final int maxRadius = 10; // 50KM
-    private final int defaultRadius = 2; // 5KM
+    private final int maxRadius = 10; // 10KM
+    private final int defaultRadius = 2; // 2KM
     private double currentRadius = (double) defaultRadius;
 
     @Override
@@ -54,6 +56,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
         radiusSeeker = (SeekBar) rootView.findViewById(R.id.radiusSeeker);
         radiusSeeker.setProgress((int) ((defaultRadius * 100.0f) / maxRadius));
         radiusSeeker.setOnSeekBarChangeListener(this);
+
+        radiusText = (TextView) rootView.findViewById(R.id.radiusText);
+        radiusText.setText(String.format("%.1f KM", currentRadius));
 
         return rootView;
     }
@@ -103,7 +108,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
         super.onDestroy();
     }
 
-    /* ---------------- OnLocationChange -------------------------*/
+    /* --------------------------- OnLocationChange -------------------------*/
 
     @Override
     public void onLocationChanged(Location location) {
@@ -122,7 +127,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
             radiusCircle = map.addCircle(
                     new CircleOptions()
                             .center(newPos)
-                            .radius(defaultRadius * 1000) //5 x 1000 in meters.
+                            .radius(defaultRadius * 1000) //2 x 1000 in meters.
                             .strokeColor(Color.BLUE).strokeWidth(1)
                             .fillColor(Color.argb(10, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor)))
             );
@@ -155,7 +160,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
                 if (e == null) {
 
                     //Clean markers
-                    for (Marker m: markers){
+                    for (Marker m : markers) {
                         m.remove();
                     }
                     markers.clear();
@@ -171,7 +176,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
         });
     }
 
-    /* ---------------- OnSeekBarChange -------------------*/
+    /* ------------------------ OnSeekBarChange -------------------*/
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -179,6 +184,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
             double newRadiusScale = (double) ((progress * maxRadius) / 100.0f);
             radiusCircle.setRadius(newRadiusScale * 1000);
             currentRadius = newRadiusScale;
+            radiusText.setText(String.format("%.1f KM", currentRadius));
         }
     }
 
@@ -189,6 +195,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-        findPetrolsNearby();
+        // Only fetch if radius larger than 0 km.
+        if(radiusCircle != null && currentRadius > 0) {
+            findPetrolsNearby();
+        }
     }
 }

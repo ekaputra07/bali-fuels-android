@@ -4,7 +4,6 @@
     android:layout_height="match_parent"
     tools:context="com.balitechy.balipetrols.MainActivity$PlaceholderFragment">
 
-
     <com.google.android.gms.maps.MapView
         android:id="@+id/map"
         android:layout_width="match_parent"
@@ -14,13 +13,35 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:padding="8dp"
-        android:background="#fff">
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:background="@drawable/seekbar_bg">
 
-        <SeekBar
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/radiusSeeker"/>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent">
+
+            <SeekBar
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:id="@+id/radiusSeeker"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                android:text="0 KM"
+                android:id="@+id/radiusText"
+                android:textSize="16sp"
+                android:layout_marginTop="7dp"
+                android:paddingRight="5dp" />
+
+        </LinearLayout>
 
     </FrameLayout>
 

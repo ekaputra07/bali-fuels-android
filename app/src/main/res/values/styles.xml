@@ -2,12 +2,12 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="android:Theme.Holo">
         <!-- Customize your theme here. -->
     </style>
 
     <!-- Base application theme. -->
-    <style name="NoActionBarTheme" parent="Theme.AppCompat.NoActionBar">
+    <style name="NoActionBarTheme" parent="android:Theme.Holo.NoActionBar">
         <!-- Customize your theme here. -->
     </style>
 </resources>
