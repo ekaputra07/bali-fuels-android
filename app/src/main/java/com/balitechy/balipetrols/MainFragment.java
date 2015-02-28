@@ -11,7 +11,6 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -21,8 +20,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
@@ -40,21 +37,19 @@ import java.util.List;
 
 public class MainFragment extends Fragment implements OnMapReadyCallback, LocationListener, SeekBar.OnSeekBarChangeListener{
 
+    private final int maxRadius = 10; // 10KM
+    private final int defaultRadius = 2; // 2KM
+    private double currentRadius = (double) defaultRadius;
     private MapView mapView;
     private SeekBar radiusSeeker;
     private LinearLayout seekbarFrame;
     private TextView radiusText;
     private List<Marker> markers = new ArrayList<Marker>();
-
     private Location lastLocation;
     private LocationManager locationManager;
     private GoogleMap map;
     private LatLng currentPos;
     private Circle radiusCircle;
-    private final int maxRadius = 10; // 10KM
-    private final int defaultRadius = 2; // 2KM
-    private double currentRadius = (double) defaultRadius;
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
