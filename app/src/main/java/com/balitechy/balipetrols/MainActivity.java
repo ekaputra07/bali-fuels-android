@@ -14,8 +14,8 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        ActionBar actionBar = getActionBar();
-//        actionBar.setIcon(R.drawable.logo_head);
+        ActionBar actionBar = getActionBar();
+        actionBar.setIcon(R.drawable.logo_head);
 
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
