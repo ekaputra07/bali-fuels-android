@@ -1,3 +1,27 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2015 Eka Putra <ekaputra@balitechy.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package com.balitechy.balipetrols;
 
 import android.app.Fragment;
@@ -35,7 +59,7 @@ import com.parse.ParseQuery;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainFragment extends Fragment implements OnMapReadyCallback, LocationListener, SeekBar.OnSeekBarChangeListener{
+public class MainFragment extends Fragment implements OnMapReadyCallback, LocationListener, SeekBar.OnSeekBarChangeListener {
 
     private final int maxRadius = 10; // 10KM
     private final int defaultRadius = 2; // 2KM
@@ -98,7 +122,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     @Override
     public void onPause() {
         mapView.onPause();
-        if(locationManager != null){
+        if (locationManager != null) {
             locationManager.removeUpdates(this);
         }
         super.onPause();
@@ -107,7 +131,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     @Override
     public void onDestroy() {
         mapView.onDestroy();
-        if(locationManager != null){
+        if (locationManager != null) {
             locationManager.removeUpdates(this);
         }
         super.onDestroy();
@@ -120,7 +144,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
         lastLocation = location;
 
         currentPos = new LatLng(location.getLatitude(), location.getLongitude());
-        if(radiusCircle == null){
+        if (radiusCircle == null) {
             int baseColor = Color.BLUE;
             radiusCircle = map.addCircle(
                     new CircleOptions()
@@ -135,7 +159,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
 
             seekbarFrame.setVisibility(View.VISIBLE);
 
-        }else{
+        } else {
             radiusCircle.setCenter(currentPos);
         }
 
@@ -143,16 +167,19 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     }
 
     @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {}
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+    }
 
     @Override
-    public void onProviderEnabled(String provider) {}
+    public void onProviderEnabled(String provider) {
+    }
 
     @Override
-    public void onProviderDisabled(String provider) {}
+    public void onProviderDisabled(String provider) {
+    }
 
 
-    private void findPetrolsNearby(){
+    private void findPetrolsNearby() {
         ParseGeoPoint currentPoint = new ParseGeoPoint(lastLocation.getLatitude(), lastLocation.getLongitude());
 
         ParseQuery<ParseObject> query = ParseQuery.getQuery("GasStation");
@@ -197,7 +224,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
         // Loop through and get the offset
         do {
             // Calculate the distance between the point of interest
-               // and the current offset in the latitude or longitude direction
+            // and the current offset in the latitude or longitude direction
             if (bLatOffset) {
                 Location.distanceBetween(myLatLng.latitude, myLatLng.longitude, myLatLng.latitude
                         + latLngOffset, myLatLng.longitude, distance);
@@ -258,7 +285,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        if(radiusCircle != null){
+        if (radiusCircle != null) {
             double newRadiusScale = (double) ((progress * maxRadius) / 100.0f);
             radiusCircle.setRadius(newRadiusScale * 1000);
             currentRadius = newRadiusScale;
@@ -274,7 +301,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         // Only fetch if radius larger than 0 km.
-        if(radiusCircle != null && currentRadius > 0) {
+        if (radiusCircle != null && currentRadius > 0) {
             findPetrolsNearby();
 
             LatLngBounds bounds = calculateBoundsWithCenter(currentPos);
