@@ -68,6 +68,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     private SeekBar radiusSeeker;
     private LinearLayout seekbarFrame;
     private TextView radiusText;
+    private List<ParseObject> locationList = new ArrayList<ParseObject>();
     private List<Marker> markers = new ArrayList<Marker>();
     private Location lastLocation;
     private LocationManager locationManager;
@@ -154,8 +155,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
                             .fillColor(Color.argb(10, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor)))
             );
 
-            LatLngBounds bounds = calculateBoundsWithCenter(currentPos);
-            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 50));
+            LatLngBounds bounds = Utils.calculateBoundsWithCenter(currentPos, currentRadius);
+            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 20));
 
             seekbarFrame.setVisibility(View.VISIBLE);
 
@@ -185,101 +186,28 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
         ParseQuery<ParseObject> query = ParseQuery.getQuery("GasStation");
         query.whereWithinKilometers("point", currentPoint, currentRadius);
 
+        // on each query, always skip objects that already fetched previously.
+        // so we don't need to clear the marker every time we do query before add it to map.
+        query.whereNotContainedIn("objectId", Utils.parseObjectsToIdList(locationList));
+
         query.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> locations, ParseException e) {
                 if (e == null) {
 
-                    //Clean markers
-                    for (Marker m : markers) {
-                        m.remove();
-                    }
-                    markers.clear();
+                    locationList.addAll(locations);
 
                     // add new markers
                     for (ParseObject loc : locations) {
                         LatLng point = new LatLng(loc.getParseGeoPoint("point").getLatitude(), loc.getParseGeoPoint("point").getLongitude());
                         Marker marker = map.addMarker(new MarkerOptions().position(point));
+                        // TODO: show direction when marker clicked.
                         markers.add(marker);
                     }
                 }
             }
         });
     }
-
-
-    /*
-    * Helper method to calculate the offset for the bounds used in map zooming
-    * Source: https://github.com/ParsePlatform/AnyWall/blob/master/AnyWall-android/Anywall/src/com/parse/anywall/MainActivity.java
-    */
-    private double calculateLatLngOffset(LatLng myLatLng, boolean bLatOffset) {
-        // The return offset, initialized to the default difference
-        double latLngOffset = 1.0;
-        // Set up the desired offset distance in meters
-        float desiredOffsetInMeters = (float) currentRadius * 1000;
-        // Variables for the distance calculation
-        float[] distance = new float[1];
-        boolean foundMax = false;
-        double foundMinDiff = 0;
-        // Loop through and get the offset
-        do {
-            // Calculate the distance between the point of interest
-            // and the current offset in the latitude or longitude direction
-            if (bLatOffset) {
-                Location.distanceBetween(myLatLng.latitude, myLatLng.longitude, myLatLng.latitude
-                        + latLngOffset, myLatLng.longitude, distance);
-            } else {
-                Location.distanceBetween(myLatLng.latitude, myLatLng.longitude, myLatLng.latitude,
-                        myLatLng.longitude + latLngOffset, distance);
-            }
-
-            // Compare the current difference with the desired one
-            float distanceDiff = distance[0] - desiredOffsetInMeters;
-            if (distanceDiff < 0) {
-                // Need to catch up to the desired distance
-                if (!foundMax) {
-                    foundMinDiff = latLngOffset;
-                    // Increase the calculated offset
-                    latLngOffset *= 2;
-                } else {
-                    double tmp = latLngOffset;
-                    // Increase the calculated offset, at a slower pace
-                    latLngOffset += (latLngOffset - foundMinDiff) / 2;
-                    foundMinDiff = tmp;
-                }
-            } else {
-                // Overshot the desired distance
-                // Decrease the calculated offset
-                latLngOffset -= (latLngOffset - foundMinDiff) / 2;
-                foundMax = true;
-            }
-        } while (Math.abs(distance[0] - desiredOffsetInMeters) > 0.01f);
-        return latLngOffset;
-    }
-
-    /*
-    * Helper method to calculate the bounds for map zooming
-    */
-    LatLngBounds calculateBoundsWithCenter(LatLng myLatLng) {
-        // Create a bounds
-        LatLngBounds.Builder builder = LatLngBounds.builder();
-        // Calculate east/west points that should to be included
-        // in the bounds
-        double lngDifference = calculateLatLngOffset(myLatLng, false);
-        LatLng east = new LatLng(myLatLng.latitude, myLatLng.longitude + lngDifference);
-        builder.include(east);
-        LatLng west = new LatLng(myLatLng.latitude, myLatLng.longitude - lngDifference);
-        builder.include(west);
-        // Calculate north/south points that should to be included
-        // in the bounds
-        double latDifference = calculateLatLngOffset(myLatLng, true);
-        LatLng north = new LatLng(myLatLng.latitude + latDifference, myLatLng.longitude);
-        builder.include(north);
-        LatLng south = new LatLng(myLatLng.latitude - latDifference, myLatLng.longitude);
-        builder.include(south);
-        return builder.build();
-    }
-
 
     /* ------------------------ OnSeekBarChange -------------------*/
 
@@ -304,8 +232,8 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
         if (radiusCircle != null && currentRadius > 0) {
             findPetrolsNearby();
 
-            LatLngBounds bounds = calculateBoundsWithCenter(currentPos);
-            map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 50));
+            LatLngBounds bounds = Utils.calculateBoundsWithCenter(currentPos, currentRadius);
+            map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 20));
         }
     }
 }
