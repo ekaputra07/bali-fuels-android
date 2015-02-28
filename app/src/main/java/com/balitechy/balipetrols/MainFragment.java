@@ -11,6 +11,8 @@ import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -22,6 +24,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.parse.FindCallback;
@@ -37,13 +40,14 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
 
     private MapView mapView;
     private SeekBar radiusSeeker;
+    private LinearLayout seekbarFrame;
     private TextView radiusText;
     private List<Marker> markers = new ArrayList<Marker>();
 
-    private int locationChangedCounter = 0;
     private Location lastLocation;
     private LocationManager locationManager;
     private GoogleMap map;
+    private LatLng currentPos;
     private Circle radiusCircle;
     private final int maxRadius = 10; // 10KM
     private final int defaultRadius = 2; // 2KM
@@ -53,6 +57,10 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         mapView = (MapView) rootView.findViewById(R.id.map);
+
+        seekbarFrame = (LinearLayout) rootView.findViewById(R.id.seekbarFrame);
+        seekbarFrame.setVisibility(View.GONE);
+
         radiusSeeker = (SeekBar) rootView.findViewById(R.id.radiusSeeker);
         radiusSeeker.setProgress((int) ((defaultRadius * 100.0f) / maxRadius));
         radiusSeeker.setOnSeekBarChangeListener(this);
@@ -77,7 +85,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     public void onMapReady(GoogleMap map) {
         map.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         map.setMyLocationEnabled(true);
-        map.getUiSettings().setMyLocationButtonEnabled(true);
         this.map = map;
 
         locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
@@ -114,25 +121,24 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     public void onLocationChanged(Location location) {
         lastLocation = location;
 
-        // on first location update, move camera to that position.
-        if(locationChangedCounter == 0) {
-            LatLng centerPos = new LatLng(location.getLatitude(), location.getLongitude());
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(centerPos, 13));
-        }
-        locationChangedCounter++;
-
-        LatLng newPos = new LatLng(location.getLatitude(), location.getLongitude());
+        currentPos = new LatLng(location.getLatitude(), location.getLongitude());
         if(radiusCircle == null){
             int baseColor = Color.BLUE;
             radiusCircle = map.addCircle(
                     new CircleOptions()
-                            .center(newPos)
+                            .center(currentPos)
                             .radius(defaultRadius * 1000) //2 x 1000 in meters.
                             .strokeColor(Color.BLUE).strokeWidth(1)
                             .fillColor(Color.argb(10, Color.red(baseColor), Color.green(baseColor), Color.blue(baseColor)))
             );
+
+            LatLngBounds bounds = calculateBoundsWithCenter(currentPos);
+            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 50));
+
+            seekbarFrame.setVisibility(View.VISIBLE);
+
         }else{
-            radiusCircle.setCenter(newPos);
+            radiusCircle.setCenter(currentPos);
         }
 
         findPetrolsNearby();
@@ -176,6 +182,80 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
         });
     }
 
+
+    /*
+    * Helper method to calculate the offset for the bounds used in map zooming
+    * Source: https://github.com/ParsePlatform/AnyWall/blob/master/AnyWall-android/Anywall/src/com/parse/anywall/MainActivity.java
+    */
+    private double calculateLatLngOffset(LatLng myLatLng, boolean bLatOffset) {
+        // The return offset, initialized to the default difference
+        double latLngOffset = 1.0;
+        // Set up the desired offset distance in meters
+        float desiredOffsetInMeters = (float) currentRadius * 1000;
+        // Variables for the distance calculation
+        float[] distance = new float[1];
+        boolean foundMax = false;
+        double foundMinDiff = 0;
+        // Loop through and get the offset
+        do {
+            // Calculate the distance between the point of interest
+               // and the current offset in the latitude or longitude direction
+            if (bLatOffset) {
+                Location.distanceBetween(myLatLng.latitude, myLatLng.longitude, myLatLng.latitude
+                        + latLngOffset, myLatLng.longitude, distance);
+            } else {
+                Location.distanceBetween(myLatLng.latitude, myLatLng.longitude, myLatLng.latitude,
+                        myLatLng.longitude + latLngOffset, distance);
+            }
+
+            // Compare the current difference with the desired one
+            float distanceDiff = distance[0] - desiredOffsetInMeters;
+            if (distanceDiff < 0) {
+                // Need to catch up to the desired distance
+                if (!foundMax) {
+                    foundMinDiff = latLngOffset;
+                    // Increase the calculated offset
+                    latLngOffset *= 2;
+                } else {
+                    double tmp = latLngOffset;
+                    // Increase the calculated offset, at a slower pace
+                    latLngOffset += (latLngOffset - foundMinDiff) / 2;
+                    foundMinDiff = tmp;
+                }
+            } else {
+                // Overshot the desired distance
+                // Decrease the calculated offset
+                latLngOffset -= (latLngOffset - foundMinDiff) / 2;
+                foundMax = true;
+            }
+        } while (Math.abs(distance[0] - desiredOffsetInMeters) > 0.01f);
+        return latLngOffset;
+    }
+
+    /*
+    * Helper method to calculate the bounds for map zooming
+    */
+    LatLngBounds calculateBoundsWithCenter(LatLng myLatLng) {
+        // Create a bounds
+        LatLngBounds.Builder builder = LatLngBounds.builder();
+        // Calculate east/west points that should to be included
+        // in the bounds
+        double lngDifference = calculateLatLngOffset(myLatLng, false);
+        LatLng east = new LatLng(myLatLng.latitude, myLatLng.longitude + lngDifference);
+        builder.include(east);
+        LatLng west = new LatLng(myLatLng.latitude, myLatLng.longitude - lngDifference);
+        builder.include(west);
+        // Calculate north/south points that should to be included
+        // in the bounds
+        double latDifference = calculateLatLngOffset(myLatLng, true);
+        LatLng north = new LatLng(myLatLng.latitude + latDifference, myLatLng.longitude);
+        builder.include(north);
+        LatLng south = new LatLng(myLatLng.latitude - latDifference, myLatLng.longitude);
+        builder.include(south);
+        return builder.build();
+    }
+
+
     /* ------------------------ OnSeekBarChange -------------------*/
 
     @Override
@@ -198,6 +278,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
         // Only fetch if radius larger than 0 km.
         if(radiusCircle != null && currentRadius > 0) {
             findPetrolsNearby();
+
+            LatLngBounds bounds = calculateBoundsWithCenter(currentPos);
+            map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 50));
         }
     }
 }

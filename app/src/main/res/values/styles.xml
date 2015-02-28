@@ -4,6 +4,11 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="android:Theme.Holo">
         <!-- Customize your theme here. -->
+        <item name="android:actionBarStyle">@style/bpActionBarStyle</item>
+    </style>
+
+    <style name="bpActionBarStyle" parent="android:Widget.Holo.ActionBar.Solid">
+        <item name="android:background">@drawable/actionbar_bg</item>
     </style>
 
     <!-- Base application theme. -->
