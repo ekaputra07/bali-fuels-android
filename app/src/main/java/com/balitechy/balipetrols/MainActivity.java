@@ -15,7 +15,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
 //        ActionBar actionBar = getActionBar();
-//        actionBar.setDisplayShowTitleEnabled(false);
+//        actionBar.setIcon(R.drawable.logo_head);
 
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
