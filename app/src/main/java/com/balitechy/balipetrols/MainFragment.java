@@ -200,7 +200,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
                     // add new markers
                     for (ParseObject loc : locations) {
                         LatLng point = new LatLng(loc.getParseGeoPoint("point").getLatitude(), loc.getParseGeoPoint("point").getLongitude());
-                        Marker marker = map.addMarker(new MarkerOptions().position(point));
+                        Marker marker = map.addMarker(new MarkerOptions().position(point).title(loc.getString("address")));
                         // TODO: show direction when marker clicked.
                         markers.add(marker);
                     }
