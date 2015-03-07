@@ -26,16 +26,17 @@
 
     <string name="app_name">Bali Petrols</string>
     <string name="app_domain">balipetrols.info</string>
-    <string name="action_settings">Settings</string>
-    <string name="toast_waiting_gps">Waiting for location...</string>
+    <string name="action_settings">Pengaturan</string>
+    <string name="toast_waiting_gps">Menunggu lokasi...</string>
+
 
     <!--Marker click dialog-->
-    <string name="location_info_title">Address</string>
-    <string name="location_info_negative">Close</string>
-    <string name="location_info_positive">Show direction!</string>
-    <string name="gmap_needed_title">Official Google Map app needed</string>
-    <string name="gmap_needed_msg">To see driving direction, you need to install official Google Map application from Google.</string>
-    <string name="gmap_needed_negative">Not now</string>
-    <string name="gmap_needed_positive">Install</string>
+    <string name="location_info_title">Alamat</string>
+    <string name="location_info_negative">Tutup</string>
+    <string name="location_info_positive">Tunjukkan jalan!</string>
+    <string name="gmap_needed_title">Aplikasi Official Google Map diperlukan</string>
+    <string name="gmap_needed_msg">Untuk dapat menunjukkan jalan ke lokasi, anda perlu memasang aplikasi Google Map official dari Google.</string>
+    <string name="gmap_needed_negative">Tidak sekarang</string>
+    <string name="gmap_needed_positive">Pasang</string>
 
 </resources>

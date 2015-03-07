@@ -24,12 +24,16 @@
 
 package com.balitechy.balipetrols;
 
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
@@ -38,7 +42,9 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -59,7 +65,7 @@ import com.parse.ParseQuery;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainFragment extends Fragment implements OnMapReadyCallback, LocationListener, SeekBar.OnSeekBarChangeListener {
+public class MainFragment extends Fragment implements OnMapReadyCallback, LocationListener, SeekBar.OnSeekBarChangeListener, GoogleMap.OnMarkerClickListener {
 
     private final int maxRadius = 10; // 10KM
     private final int defaultRadius = 2; // 2KM
@@ -74,7 +80,9 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     private LocationManager locationManager;
     private GoogleMap map;
     private LatLng currentPos;
+    private LatLng bali = new LatLng(-8.4652174, 115.0814251);
     private Circle radiusCircle;
+    private String gmapPackage = "com.google.android.apps.maps";
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -108,7 +116,16 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     public void onMapReady(GoogleMap map) {
         map.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         map.setMyLocationEnabled(true);
+        map.getUiSettings().setZoomControlsEnabled(true);
+        map.setOnMarkerClickListener(this);
+
         this.map = map;
+
+        // show indication app is waiting for GPS
+        Toast.makeText(getActivity(), R.string.toast_waiting_gps, Toast.LENGTH_LONG).show();
+
+        // move map camera to center at Bali while device waiting for GPS results.
+        this.map.moveCamera(CameraUpdateFactory.newLatLngZoom(bali, 10));
 
         locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 10, this);
@@ -201,7 +218,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
                     for (ParseObject loc : locations) {
                         LatLng point = new LatLng(loc.getParseGeoPoint("point").getLatitude(), loc.getParseGeoPoint("point").getLongitude());
                         Marker marker = map.addMarker(new MarkerOptions().position(point).title(loc.getString("address")));
-                        // TODO: show direction when marker clicked.
                         markers.add(marker);
                     }
                 }
@@ -210,7 +226,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
     }
 
     /* ------------------------ OnSeekBarChange -------------------*/
-
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         if (radiusCircle != null) {
@@ -235,5 +250,58 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Locati
             LatLngBounds bounds = Utils.calculateBoundsWithCenter(currentPos, currentRadius);
             map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 20));
         }
+    }
+
+
+    /* On marker click listener */
+    public void googleMapAppNeeded(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(R.string.gmap_needed_title).setMessage(R.string.gmap_needed_msg);
+        builder.setPositiveButton(R.string.gmap_needed_positive, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + gmapPackage)));
+                } catch (android.content.ActivityNotFoundException anfe) {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + gmapPackage)));
+                }
+            }
+        });
+        builder.setNegativeButton(R.string.gmap_needed_negative, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    @Override
+    public boolean onMarkerClick(final Marker marker) {
+        String title = marker.getTitle();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle(R.string.location_info_title).setMessage(title);
+
+        builder.setPositiveButton(R.string.location_info_positive, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+
+                Uri gmNavUri = Uri.parse(String.format("google.navigation:q=%s,%s", marker.getPosition().latitude, marker.getPosition().longitude));
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmNavUri);
+                mapIntent.setPackage(gmapPackage);
+
+                if(mapIntent.resolveActivity(getActivity().getPackageManager()) != null){
+                    startActivity(mapIntent);
+                }else{
+                    googleMapAppNeeded();
+                }
+
+            }
+        });
+        builder.setNegativeButton(R.string.location_info_negative, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        return false;
     }
 }
